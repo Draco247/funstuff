@@ -107,16 +107,14 @@ class SpotifyAPI(object):
         return self.get_resource(_id,resource_type="artists", version="v1")
 
 
-    def search(self,query,search_type="artist"):
-        access_token = self.get_access_token()
-
+    def base_search(self,query_params):
         headers = self.get_access_headers()
 
         #just general search
         endpoint = "https://api.spotify.com/v1/search"
-        data = urlencode({"q":query, "type":search_type.lower()})
-        print(data)
-        lookup_url = f"{endpoint}?{data}"
+        
+        # print(data)
+        lookup_url = f"{endpoint}?{query_params}"
         print(lookup_url)
         r = requests.get(lookup_url, headers=headers)
         if r.status_code not in range(200,299):
@@ -124,10 +122,26 @@ class SpotifyAPI(object):
 
         data = (r.json())
         return data
+    
+    def search(self, query=None,operator=None, operator_query=None, search_type="artist"):
+        if query == None:
+            raise Exception("a query is needed") 
+        if isinstance(query,dict):
+            query = " ".join([f"{key}:{value}" for key,value in query.items()])
+        if operator != None and operator_query != None:
+            if operator.lower() == "or" or operator.lower() == "not":
+                operator = operator.upper()
+                if isinstance(operator_query,str):
+                    query = f"{query} {operator} {operator_query}"
+        query_params = urlencode({"q":query, "type":search_type.lower()})
+        print(query_params)
+        return self.base_search(query_params)
+    
 
 
 client = SpotifyAPI(client_id,client_secret)
-print(client.search("I am all of me",search_type="Track"))
-print(client.get_artist("4ShgdWtm52xvEr8uYmT0V6"))
+print(client.search(query="I am all of me", operator="NOT", operator_query="SEGA SOUND TEAM", search_type="track"))
+# print(client.get_artist("4ShgdWtm52xvEr8uYmT0V6"))
+# print(client.get_album("6GYmswDS3i2dc4C9bhr9N6"))
 
 
