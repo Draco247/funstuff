@@ -98,13 +98,36 @@ class SpotifyAPI(object):
         if r.status_code not in range(200,299):
             return {}
         return r.json()
-        pass
+        
 
     def get_album(self, _id): 
         return self.get_resource(_id,resource_type="albums", version="v1")
 
     def get_artist(self, _id):
         return self.get_resource(_id,resource_type="artists", version="v1")
+
+    def get_all_album_tracks(self, _id):
+        return self.get_album(_id)["tracks"]
+
+    # def get_all_artist_albums(self, _id):
+    #     return self.get_resource(_id,resource_type="artists", version="v1")
+
+    def get_all_artist_albums(self, _id, version="v1"):
+        endpoint = f"https://api.spotify.com/{version}/artists/{_id}/albums"
+        headers = self.get_access_headers()
+        r = requests.get(endpoint, headers=headers)
+        if r.status_code not in range(200,299):
+            return {}
+        return r.json()
+    
+    # def get_artist_top_tracks(self, _id, version="v1"):
+    #     endpoint = f"https://api.spotify.com/{version}/artists/{_id}/top-tracks"
+    #     headers = self.get_access_headers()
+    #     r = requests.get(endpoint, headers=headers)
+    #     print(r.status_code)
+    #     if r.status_code not in range(200,299):
+    #         return {}
+    #     return r.json()
 
 
     def base_search(self,query_params):
@@ -140,8 +163,11 @@ class SpotifyAPI(object):
 
 
 client = SpotifyAPI(client_id,client_secret)
-print(client.search(query="I am all of me", operator="NOT", operator_query="SEGA SOUND TEAM", search_type="track"))
-# print(client.get_artist("4ShgdWtm52xvEr8uYmT0V6"))
-# print(client.get_album("6GYmswDS3i2dc4C9bhr9N6"))
+# print(client.get_album("4cY7Fyy6gNSshnnTFvIE0w"))
+# print(client.search(query="I am all of me", operator="NOT", operator_query="SEGA SOUND TEAM", search_type="track"))
+print(client.get_all_artist_albums("4ShgdWtm52xvEr8uYmT0V6"))
+# print(client.get_all_album_tracks("6GYmswDS3i2dc4C9bhr9N6"))
+# print(client.get_artist_top_tracks("4ShgdWtm52xvEr8uYmT0V6"))
+
 
 
