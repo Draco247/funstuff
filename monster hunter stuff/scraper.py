@@ -1,5 +1,6 @@
 import csv
-
+import urllib.request
+from PIL import Image
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
@@ -16,15 +17,72 @@ class Scraper(object):
         self.headers = headers
         self.base_url = base_url
 
+    def get_monster(self):
+        url = f"{base_url}data/monsters?view=lg"
+        session = requests.Session()
+        r = session.get(url, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
+        self.get_monster_pages(soup)
+
+    def get_monster_pages(self, soup):
+        all_monsters = soup.find_all("div", attrs={"class": "group relative p-4 border-r border-b border-gray-200 dark:border-gray-800 sm:p-6"})
+        # print(all_monsters)
+        for monster in all_monsters:
+            # print(monster)
+            monster_name = monster.find('a')
+            monster_name = monster_name.text.strip()
+            monster_img = monster.find('img')["src"]
+            link = monster.find('a')['href']
+            print(monster_name)
+            print(link)
+            print(monster_img)
+            session = requests.Session()
+            r = session.get(link, headers=headers)
+            soup = BeautifulSoup(r.content, "html.parser")
+            print(self.get_monster_details(soup))
+            # if monster_name == "Gold Rathian":
+            #     print(monster_name)
+                
+                # print(monster_name)
+
+    def get_monster_details(self, soup):
+        monster_drop_table = soup.find_all('table')[5]
+        row = monster_drop_table.find_all('tr')
+        count = 0
+        for item in row:
+            item_name = item.find('a').text
+            quest_rank = item.find_all("td")[1].text
+            method = item.find_all("td")[2].text
+            area = item.find_all("td")[3].text
+            amount = item.find_all("td")[4].text
+            rate = item.find_all("td")[5].text
+            print(item_name)
+            print(quest_rank)
+            print(method)
+            print(area)
+            print(amount)
+            print(rate)
+            monster_item = {"Monster Part": item_name, "Monster Part Rank": quest_rank}
+            print(monster_item)
+            print("----------")
+        # print(monster_drop_table)
+
+
     def get_all_weapon(self):
         weapon_ids = list(range(0, 14))
-        for i in weapon_ids:
-            url = f"{base_url}data/weapons?view={i}"
-            session = requests.Session()
-            r = session.get(url, headers=headers)
-            soup = BeautifulSoup(r.content, "html.parser")
-            # print(soup)
-            print(self.get_all_item_details(soup, i))
+        url = f"{base_url}data/weapons?view={12}"
+        session = requests.Session()
+        r = session.get(url, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
+        # print(soup)
+        print(self.get_all_item_details(soup, 12))
+        # for i in weapon_ids:
+        #     url = f"{base_url}data/weapons?view={i}"
+        #     session = requests.Session()
+        #     r = session.get(url, headers=headers)
+        #     soup = BeautifulSoup(r.content, "html.parser")
+        #     # print(soup)
+        #     print(self.get_all_item_details(soup, i))
 
     def get_all_item_details(self, soup, wpn_id):
         table = soup.find("table", attrs={
@@ -153,7 +211,7 @@ class Scraper(object):
 
                 print(wpn_name, attack_val, element, element_val, arc_shot, arrow_lvl, bow_coatings, rarity_val)
 
-        if wpn_id == 12 or wpn_id == 13:  # hbg and lbg section
+        if wpn_id == 12 or wpn_id == 13:  # hbg and lbg section will come back to it latr since its the only part breaking
             # print("ok")
             for row in rows:
                 wpn_name = row.find('a')
@@ -164,35 +222,38 @@ class Scraper(object):
                 attack_val = row.find('div', attrs={"data-key": "attack"})
                 if attack_val is not None:
                     attack_val = [ele.text.strip() for ele in attack_val]
+                    print(attack_val)
+                print(attack_val)
 
-                table = row.find('table')
-                ammo = []
-                if table is not None:
-                    gun_info = table.findAll('td')
-                    for g in gun_info:
-                        gun_info_info = g.find_all('div')
-                        if len(gun_info_info) > 0:
-                            drr = [gun_info_info[0].text.strip(), gun_info_info[1].text.strip(), gun_info_info[2].text.strip()]
-                            # print(deviation[0])
-                            print(drr)
-                        ammo_info = g.find_all('table')
+            #     table = row.find('table')
+            #     ammo = []
+            #     if table is not None:
+            #         gun_info = table.findAll('td')
+            #         for g in gun_info:
+            #             gun_info_info = g.find_all('div')
+            #             if len(gun_info_info) > 0:
+            #                 drr = [gun_info_info[0].text.strip(), gun_info_info[1].text.strip(), gun_info_info[2].text.strip()]
+            #                 # print(deviation[0])
+            #                 print(drr)
+            #             ammo_info = g.find_all('table')
 
-                        if len(ammo_info) > 0:
-                            # print([ammo_info[0].text.strip().replace("\n", "")])
-                            ammo += [ammo_info[0].text.strip().replace("\n", "")]
-                            print(ammo)
-                # deviation = gun_info.find_all('td')
-                # print(gun_info)
-                # print(deviation)
-                # if deviation is not None:
-                #     print([ele.text.strip() for ele in deviation])
+            #             if len(ammo_info) > 0:
+            #                 # print([ammo_info[0].text.strip().replace("\n", "")])
+            #                 ammo += [ammo_info[0].text.strip().replace("\n", "")]
+            #                 print(ammo)
+            #     # deviation = gun_info.find_all('td')
+            #     # print(gun_info)
+            #     # print(deviation)
+            #     # if deviation is not None:
+            #     #     print([ele.text.strip() for ele in deviation])
 
-                rarity = row.find_all('small')[-1]
-                if rarity_val is not None:
-                    rarity_val = [ele.text.strip() for ele in rarity]
-                #
-                print(wpn_name, attack_val,rarity_val)
+            #     rarity_val = row.find_all('small')
+            #     # print(rarity_val.text)
+            #     if rarity_val is not None:
+            #         rarity_val = [ele.text.strip() for ele in rarity_val]
+            # print(wpn_name)
 
 
 webscrape = Scraper(headers, base_url)
-webscrape.get_all_weapon()
+# webscrape.get_all_weapon()
+webscrape.get_monster()
